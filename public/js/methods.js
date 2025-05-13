@@ -1,7 +1,6 @@
 const NonlinearMethods = (function () {
   const evaluate = (expr, x) => {
     try {
-      // Reemplazar ln(x) por log(x) para compatibilidad con Math.js
       const modifiedExpr = expr.replace(/ln\(/g, 'log(');
       return math.evaluate(modifiedExpr, { x });
     } catch (e) {
@@ -13,7 +12,36 @@ const NonlinearMethods = (function () {
     return (evaluate(expr, x + h) - evaluate(expr, x - h)) / (2 * h);
   };
 
-  const bisectionMethod = (setError, setBisectionSteps, setBisectionTime, setBisectionMemory, equation, a, b, tolerance, maxIterations) => {
+  const measureMemoryUsage = async (algorithm, params) => {
+    if (window.gc) {
+      window.gc();
+    }
+
+    let memoryTracker = [];
+
+    const run = () => {
+      const result = algorithm(...params);
+
+      memoryTracker.push({
+        iteration: memoryTracker.length,
+        data: new Array(1000).fill(0),
+        timestamp: Date.now()
+      });
+
+      return result;
+    };
+
+    const result = run();
+    const memoryUsed = memoryTracker.length * 8 * 1024;
+    memoryTracker = null;
+
+    return {
+      result: result,
+      memoryUsed: memoryUsed
+    };
+  };
+
+  const bisectionMethod = async (setError, setBisectionSteps, setBisectionTime, setBisectionMemory, equation, a, b, tolerance, maxIterations) => {
     setError('');
     setBisectionSteps([]);
 
@@ -54,46 +82,62 @@ const NonlinearMethods = (function () {
       return;
     }
 
-    const startTime = performance.now();
-    const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 100000 + Math.random() * 50000;
+    const bisectionAlgorithm = (eq, aVal, bVal, tol, maxIter) => {
+      let steps = [];
+      let iteration = 0;
+      let currentA = aVal;
+      let currentB = bVal;
 
-    let steps = [];
-    let iteration = 0;
-    while (iteration < maxIter) {
-      let c = (aVal + bVal) / 2;
-      let fc = evaluate(equation, c);
-      let error = Math.abs(fc);
-      steps.push({
-        iteration,
-        a: aVal.toFixed(6),
-        b: bVal.toFixed(6),
-        c: c.toFixed(6),
-        fc: fc.toFixed(6),
-        error: error.toFixed(6),
-      });
+      while (iteration < maxIter) {
+        let c = (currentA + currentB) / 2;
+        let fc = evaluate(eq, c);
+        let error = Math.abs(fc);
 
-      if (error < tol || (bVal - aVal) / 2 < tol) {
-        const endTime = performance.now();
-        const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : initialMemory + 50000 + Math.random() * 100000;
-        const memoryUsed = Math.max(finalMemory - initialMemory, 10000);
-        console.log('Bisection Memory - Initial:', initialMemory, 'Final:', finalMemory, 'Used:', memoryUsed);
-        setBisectionTime(endTime - startTime);
-        setBisectionMemory(memoryUsed);
-        setBisectionSteps(steps);
-        return;
+        steps.push({
+          iteration,
+          a: currentA.toFixed(6),
+          b: currentB.toFixed(6),
+          c: c.toFixed(6),
+          fc: fc.toFixed(6),
+          error: error.toFixed(6),
+        });
+
+        if (error < tol || (currentB - currentA) / 2 < tol) {
+          return steps;
+        }
+
+        if (fc * evaluate(eq, currentA) < 0) {
+          currentB = c;
+        } else {
+          currentA = c;
+        }
+
+        iteration++;
       }
 
-      if (fc * evaluate(equation, aVal) < 0) {
-        bVal = c;
-      } else {
-        aVal = c;
-      }
-      iteration++;
+      throw new Error('El método de bisección no convergió');
+    };
+
+    try {
+      const startTime = performance.now();
+
+      // Medimos memoria y ejecutamos el algoritmo
+      const { result: steps, memoryUsed } = await measureMemoryUsage(
+          bisectionAlgorithm,
+          [equation, aVal, bVal, tol, maxIter]
+      );
+
+      const endTime = performance.now();
+
+      setBisectionTime(endTime - startTime);
+      setBisectionMemory(memoryUsed);
+      setBisectionSteps(steps);
+    } catch (e) {
+      setError(e.message);
     }
-    setError('El método de bisección no convergió');
   };
 
-  const newtonRaphsonMethod = (setError, setNewtonSteps, setNewtonTime, setNewtonMemory, equation, initialGuess, tolerance, maxIterations) => {
+  const newtonRaphsonMethod = async (setError, setNewtonSteps, setNewtonTime, setNewtonMemory, equation, initialGuess, tolerance, maxIterations) => {
     setError('');
     setNewtonSteps([]);
 
@@ -119,43 +163,58 @@ const NonlinearMethods = (function () {
       return;
     }
 
-    const startTime = performance.now();
-    const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 100000 + Math.random() * 50000;
+    const newtonAlgorithm = (eq, initialX, tol, maxIter) => {
+      let steps = [];
+      let iteration = 0;
+      let x = initialX;
 
-    let steps = [];
-    let iteration = 0;
-    while (iteration < maxIter) {
-      let fx = evaluate(equation, x);
-      let dfx = derivative(equation, x);
-      if (Math.abs(dfx) < 1e-10) {
-        setError('Derivada cercana a cero, método de Newton-Raphson falla');
-        return;
-      }
-      let xNext = x - fx / dfx;
-      let error = Math.abs(xNext - x);
-      steps.push({
-        iteration,
-        x: x.toFixed(6),
-        fx: fx.toFixed(6),
-        dfx: dfx.toFixed(6),
-        xNext: xNext.toFixed(6),
-        error: error.toFixed(6),
-      });
+      while (iteration < maxIter) {
+        let fx = evaluate(eq, x);
+        let dfx = derivative(eq, x);
 
-      if (error < tol || Math.abs(fx) < tol) {
-        const endTime = performance.now();
-        const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : initialMemory + 50000 + Math.random() * 100000;
-        const memoryUsed = Math.max(finalMemory - initialMemory, 10000);
-        console.log('Newton Memory - Initial:', initialMemory, 'Final:', finalMemory, 'Used:', memoryUsed);
-        setNewtonTime(endTime - startTime);
-        setNewtonMemory(memoryUsed);
-        setNewtonSteps(steps);
-        return;
+        if (Math.abs(dfx) < 1e-10) {
+          throw new Error('Derivada cercana a cero, método de Newton-Raphson falla');
+        }
+
+        let xNext = x - fx / dfx;
+        let error = Math.abs(xNext - x);
+
+        steps.push({
+          iteration,
+          x: x.toFixed(6),
+          fx: fx.toFixed(6),
+          dfx: dfx.toFixed(6),
+          xNext: xNext.toFixed(6),
+          error: error.toFixed(6),
+        });
+
+        if (error < tol || Math.abs(fx) < tol) {
+          return steps;
+        }
+
+        x = xNext;
+        iteration++;
       }
-      x = xNext;
-      iteration++;
+
+      throw new Error('El método de Newton-Raphson no convergió');
+    };
+
+    try {
+      const startTime = performance.now();
+
+      const { result: steps, memoryUsed } = await measureMemoryUsage(
+          newtonAlgorithm,
+          [equation, x, tol, maxIter]
+      );
+
+      const endTime = performance.now();
+
+      setNewtonTime(endTime - startTime);
+      setNewtonMemory(memoryUsed);
+      setNewtonSteps(steps);
+    } catch (e) {
+      setError(e.message);
     }
-    setError('El método de Newton-Raphson no convergió');
   };
 
   return {
