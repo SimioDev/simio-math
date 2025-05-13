@@ -4,19 +4,19 @@ Aplicación web para resolver ecuaciones no lineales usando los métodos de Bise
 
 ## Requisitos
 - Docker y Docker Compose instalados.
-- Navegador web moderno.
+- Navegador web.
 
 ## Instrucciones para ejecutar
 
 1. Clona el repositorio:
    ```bash
-   git clone <URL_DEL_REPOSITORIO>
-   cd nonlinear-equation-solver
+   git clone git@github.com:SimioDev/simio-math.git
+   cd simio-math
    ```
 
 2. Construye y ejecuta el contenedor con Docker Compose:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 3. Accede a la aplicación en:

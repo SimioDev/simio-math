@@ -1,7 +1,5 @@
 const { useState, useEffect, useRef } = React;
-
-// Importamos funciones de otros módulos
-const { evaluate, derivative, bisectionMethod, newtonRaphsonMethod } = window.NonlinearMethods;
+const { bisectionMethod, newtonRaphsonMethod } = window.NonlinearMethods;
 const { initializeCharts } = window.ChartUtils;
 
 function App() {
@@ -25,12 +23,12 @@ function App() {
   const timeChartRef = useRef(null);
   const memoryChartRef = useRef(null);
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     setError('');
     try {
-      bisectionMethod(setError, setBisectionSteps, setBisectionTime, setBisectionMemory, equation, a, b, tolerance, maxIterations);
+      await bisectionMethod(setError, setBisectionSteps, setBisectionTime, setBisectionMemory, equation, a, b, tolerance, maxIterations);
       if (!error) {
-        newtonRaphsonMethod(setError, setNewtonSteps, setNewtonTime, setNewtonMemory, equation, initialGuess, tolerance, maxIterations);
+        await newtonRaphsonMethod(setError, setNewtonSteps, setNewtonTime, setNewtonMemory, equation, initialGuess, tolerance, maxIterations);
       }
     } catch (e) {
       setError('Error al calcular: ' + e.message);
@@ -45,7 +43,7 @@ function App() {
       { expr: 'x^2 - 4', a: 1, b: 3, initialGuess: 2 },
       { expr: 'cos(x) - x', a: 0, b: 1, initialGuess: 0.7 },
       { expr: 'x^3 - 2x^2 + x - 1', a: 1, b: 2, initialGuess: 1.4 },
-      { expr: 'log(x) + x - 2', a: 1, b: 2, initialGuess: 1.5 }, // Cambiado ln(x) por log(x)
+      { expr: 'log(x) + x - 2', a: 1, b: 2, initialGuess: 1.5 },
       { expr: 'x^4 - 5x^2 + 4', a: 1, b: 2, initialGuess: 1.5 },
     ];
     const tolerances = ['0.0001', '0.001', '0.00001'];
