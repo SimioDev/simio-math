@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solucionador de Ecuaciones No Lineales</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col">
+  <div className="flex-1 flex items-center justify-center py-10">
+    <div id="root"></div>
+  </div>
+  <script type="text/javascript" src="/js/methods.js"></script>
+  <script type="text/javascript" src="/js/charts.js"></script>
+  <script type="text/babel" data-type="module" src="/js/App.jsx"></script>
+  <script type="text/javascript">
+    function initializeApp() {
+      if (window.App) {
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(window.App));
+      } else {
+        console.error('Error: window.App no está definido. Reintentando...');
+        setTimeout(initializeApp, 100);
+      }
+    }
+    initializeApp();
+  </script>
+</body>
+</html>
