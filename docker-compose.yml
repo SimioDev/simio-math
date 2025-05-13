@@ -1,8 +1,10 @@
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: simiodev/simiomath-web:latest
+    # Para los que quieran construir localmente la imagen
+    #build:
+      #context: .
+      #dockerfile: Dockerfile
     ports:
       - "8080:80"
     volumes:
